@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 import styled from '@emotion/styled';
 import useSelectMonedas from '../hooks/useSelectMonedas';
 import monedas from '../data/monedas';
@@ -21,12 +24,36 @@ const InputSubmit = styled.input`
   }
 `;
 
-const Formulario = () => {
+const Formulario = ({ setMonedas }) => {
+  const [criptos, setCriptos] = useState([]);
+
   const [moneda, SelectMonedas] = useSelectMonedas('Elije tu Moneda', monedas);
+  const [cripto, SelectCriptos] = useSelectMonedas('Elije tu Cripto', criptos);
+
+  // ~ Traer Info de criptos de la API
+  useEffect(() => {
+    const consultarAPI = async () => {
+      const URL = 'https://min-api.cryptocompare.com/data/top/mktcapfull?limit=10&tsym=USD';
+      const response = await axios.get(URL);
+
+      const arrCriptos = response.data.Data.map((cripto) => {
+        return { id: cripto.CoinInfo.Name, nombre: cripto.CoinInfo.FullName };
+      });
+      setCriptos(arrCriptos);
+    };
+    consultarAPI();
+  }, []);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if ([moneda, cripto].includes('')) return Swal.fire({ title: 'Todos los campos son obligatorios', icon: 'error' });
+
+    setMonedas({ moneda, cripto });
+  };
 
   return (
-    <form>
+    <form onSubmit={handleSubmit}>
       <SelectMonedas />
+      <SelectCriptos />
       <InputSubmit type="submit" value="Cotizar" />
     </form>
   );
